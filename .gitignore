@@ -21,6 +21,7 @@ Session.vim
 .settings/
 .vs/
 .dir-locals.el
+*/target
 
 ## Tool
 .valgrindrc
