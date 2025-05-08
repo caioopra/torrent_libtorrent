@@ -1,6 +1,8 @@
 build/
 .vscode/
 
+images/
+
 ## File system
 .DS_Store
 desktop.ini

@@ -1,5 +1,12 @@
 #include <chrono>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <iterator>
+#include <libtorrent/bencode.hpp>
+#include <libtorrent/create_torrent.hpp>
+#include <libtorrent/file_storage.hpp>
+#include <sstream>
 #include <thread>
 
 #include "peer.h"
@@ -12,44 +19,77 @@
 
 using namespace lt;
 
-Peer::Peer(const std::string &file_to_seed) : file_path(file_to_seed) {}
+Peer::Peer() {
+  settings_pack sp;
+  sp.set_str(settings_pack::user_agent, "dynamic-peer/1.0");
+  sp.set_int(settings_pack::alert_mask,
+             alert::status_notification | alert::error_notification);
 
-void Peer::start() { run_libtorrent_session(); }
+  session_ = std::make_unique<session>(sp);
+}
 
-void Peer::run_libtorrent_session() {
-  settings_pack settings;
-  settings.set_int(settings_pack::alert_mask, alert::status_notification);
-  settings.set_str(settings_pack::listen_interfaces, "0.0.0.0:6881");
+void Peer::start_cli_loop() {
+  std::string cmd;
 
-  session ses(settings);
+  while (true) {
+    std::cout << "\nCommands: seed <file>, download <.torrent>, stop <name>, "
+                 "list, exit\n> ";
 
-  // seeding file
-  add_torrent_params p;
+    std::getline(std::cin, cmd);
+    std::istringstream iss(cmd);
+    std::string action, arg;
 
-  std::cout << "123123 " << std::endl;
-  p.save_path = "./downloads";
-  std::cout << "444 " << std::endl;
-  p.ti =
-      std::make_shared<torrent_info>(file_path); // creating torrent from file
-      std::cout << "3333 " << std::endl;
-  error_code ec;
-  torrent_handle h = ses.add_torrent(p, ec);
-  if (ec) {
-    std::cerr << "Error adding torrent: " << ec.message() << std::endl;
+    iss >> action >> std::ws;
+
+    std::getline(iss, arg);
+
+    if (action == "seed") {
+      seed_file(arg, "http://localhost:8080/announce");
+    } else if (action == "download") {
+      download_file(arg);
+    } else if (action == "stop") {
+      stop_torrent(arg);
+    } else if (action == "list") {
+      list_active_torrents();
+    } else if (action == "exit") {
+      break;
+    } else {
+      std::cout << "Unknown command: " << action << std::endl;
+    }
+
+    handle_alerts();
+  }
+}
+
+void Peer::seed_file(const std::string &file_path,
+                     const std::string &tracker_url) {
+  if (!std::filesystem::exists(file_path)) {
+    std::cerr << "File does not exist: " << file_path << std::endl;
     return;
   }
 
-  std::cout << "Seeding " << file_path << std::endl;
+  file_storage fs;
+  add_files(fs, file_path);
 
-  // event loop
-  for (;;) {
-    std::vector<alert *> alerts;
-    ses.pop_alerts(&alerts);
+  create_torrent t(fs);
+  t.add_tracker(tracker_url);
+  set_piece_hashes(t, std::filesystem::path(file_path).parent_path().string());
 
-    for (alert* a : alerts) {
-      std::cout << a->message() << std::endl;
-    }
+  std::string torrent_path =
+      "torrents/" + std::filesystem::path(file_path).filename().string() +
+      ".torrent";
+  std::ofstream out(torrent_path, std::ios::binary);
+  bencode(std::ostream_iterator<char>(out), t.generate());
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));
-  }
+  std::cout << "Created torrent: " << torrent_path << std::endl;
+
+  add_torrent_params atp;
+  atp.ti = std::make_shared<torrent_info>(torrent_path);
+  atp.save_path = std::filesystem::path(file_path).parent_path().string();
+
+  torrent_handle h = session_->add_torrent(std::move(atp));
+  std::string name = h.status().name;
+  active_torrents_[name] = h;
+
+  std::cout << "Seeding: " << name << std::endl;
 }

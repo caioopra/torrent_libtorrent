@@ -1,9 +1,12 @@
 #include <fstream>
 #include <iostream>
+#include <libtorrent/alert.hpp>
 #include <libtorrent/bencode.hpp>
 #include <libtorrent/create_torrent.hpp>
 #include <libtorrent/file.hpp>
 #include <libtorrent/file_storage.hpp>
+#include <libtorrent/fwd.hpp>
+#include <libtorrent/session.hpp>
 #include <libtorrent/sha1_hash.hpp>
 #include <libtorrent/write_resume_data.hpp>
 
@@ -12,7 +15,7 @@ using namespace lt;
 bool create_torrent_file(const std::string &file_path,
                          const std::string &torrent_path,
                          const std::string &tracker_url = "",
-                         const std::string &base_path = "test_files") {
+                         const std::string &base_path = "torrents") {
   file_storage fs;
   add_files(fs, file_path, [](std::string const &) { return true; });
 
@@ -23,9 +26,10 @@ bool create_torrent_file(const std::string &file_path,
     t.add_tracker(tracker_url);
   }
 
-  set_piece_hashes(t, "test_files", [](int i) {
+  set_piece_hashes(t, "torrents", [](int i) {
     std::cout << "Calculating piece hash: " << i << std::endl;
   });
+  std::cout << "Piece hashes calculated." << std::endl;
 
   entry e = t.generate();
 
