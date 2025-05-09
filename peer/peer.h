@@ -11,7 +11,7 @@ public:
   void start_cli_loop(); // accepts commands: "seed", "download", "stop", "list"
 
   void seed_file(const std::string &file_path, const std::string &tracker_url);
-  void download_file(const std::string &torrent_path);
+  void download_torrent(const std::string &torrent_path);
   void stop_torrent(const std::string &name_or_path);
   void list_active_torrents();
 

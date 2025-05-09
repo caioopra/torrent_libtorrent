@@ -46,7 +46,7 @@ void Peer::start_cli_loop() {
     if (action == "seed") {
       seed_file(arg, "http://localhost:8080/announce");
     } else if (action == "download") {
-      download_file(arg);
+      download_torrent(arg);
     } else if (action == "stop") {
       stop_torrent(arg);
     } else if (action == "list") {
@@ -92,4 +92,35 @@ void Peer::seed_file(const std::string &file_path,
   active_torrents_[name] = h;
 
   std::cout << "Seeding: " << name << std::endl;
+}
+
+void Peer::download_torrent(const std::string &torrent_path) {
+  if (!std::filesystem::exists(torrent_path)) {
+    std::cerr << "Torrent file does not exist: " << torrent_path << std::endl;
+    return;
+  }
+
+  add_torrent_params atp;
+  atp.ti = std::make_shared<torrent_info>(torrent_path);
+  atp.save_path = "downloads";
+
+  torrent_handle h = session_->add_torrent(std::move(atp));
+  std::string name = h.status().name;
+  active_torrents_[name] = h;
+
+  std::cout << "Downloading: " << name << std::endl;
+}
+
+void Peer::stop_torrent(const std::string &name) {
+  auto it = active_torrents_.find(name);
+  if (it != active_torrents_.end()) {
+    session_->remove_torrent(it->second);
+    active_torrents_.erase(it);
+
+    std::cout << "Stopped torrent: " << name << std::endl;
+
+    return;
+  }
+
+  std::cerr << "Torrent not found: " << name << std::endl;
 }
