@@ -7,5 +7,5 @@ pkg_check_modules(LIBTORRENT REQUIRED libtorrent-rasterbar)
 
 include_directories(${LIBTORRENT_INCLUDE_DIRS})
 
-add_executable(peer peer/main.cpp peer/peer.h peer/peer.cpp peer/torrent_manager.cpp)
+add_executable(peer peer/main.cpp peer/peer.h peer/peer.cpp)
 target_link_libraries(peer ${LIBTORRENT_LIBRARIES})
