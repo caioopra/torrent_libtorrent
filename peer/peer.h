@@ -15,6 +15,8 @@ public:
   void stop_torrent(const std::string &name_or_path);
   void list_active_torrents();
 
+  void show_statistics();
+
 private:
   std::unique_ptr<libtorrent::session> session_;
   std::unordered_map<std::string, libtorrent::torrent_handle> active_torrents_;

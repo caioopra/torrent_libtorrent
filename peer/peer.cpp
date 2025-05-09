@@ -124,3 +124,43 @@ void Peer::stop_torrent(const std::string &name) {
 
   std::cerr << "Torrent not found: " << name << std::endl;
 }
+
+void Peer::show_statistics() {
+  std::cout << "Active torrents:" << std::endl;
+  for (const auto &[name, handle] : active_torrents_) {
+    auto st = handle.status();
+    std::cout << " - " << name << " ["
+              << (st.is_seeding ? "Seeding" : "Downloading")
+              << "] Progress: " << (int)(st.progress * 100) << "%"
+              << " Downloaded: " << st.all_time_download
+              << " Uploaded: " << st.all_time_upload
+              << " Peers: " << st.num_peers
+              << " Download Rate: " << st.download_rate / 1000
+              << " KB/s Upload Rate: " << st.upload_rate / 1000 << " KB/s"
+              << std::endl;
+  }
+}
+
+void Peer::list_active_torrents() {
+  if (active_torrents_.empty()) {
+    std::cout << "No active torrents." << std::endl;
+    return;
+  }
+
+  for (const auto &[name, handle] : active_torrents_) {
+    auto st = handle.status();
+    std::cout << " - " << name << " ["
+              << (st.is_seeding ? "Seeding" : "Downloading")
+              << "] Progress: " << (int)(st.progress * 100) << "%" << std::endl;
+  }
+}
+
+void Peer::handle_alerts() {
+  std::vector<alert *> alerts;
+
+  session_->pop_alerts(&alerts);
+
+  for (alert *a : alerts) {
+    std::cout << "Alert: " << a->message() << std::endl;
+  }
+}
