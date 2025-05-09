@@ -73,13 +73,20 @@ void Peer::seed_file(const std::string &file_path,
 
   create_torrent t(fs);
   t.add_tracker(tracker_url);
-  set_piece_hashes(t, std::filesystem::path(file_path).parent_path().string());
+  set_piece_hashes(t, std::filesystem::path(file_path).parent_path(), [](int i) {
+    std::cout << "Hashing piece " << i << std::endl;
+  });
 
   std::string torrent_path =
       "torrents/" + std::filesystem::path(file_path).filename().string() +
       ".torrent";
   std::ofstream out(torrent_path, std::ios::binary);
+  if (!out) {
+    std::cerr << "Failed to create torrent file: " << torrent_path << std::endl;
+    return;
+  }
   bencode(std::ostream_iterator<char>(out), t.generate());
+  out.flush();
 
   std::cout << "Created torrent: " << torrent_path << std::endl;
 
