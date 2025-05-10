@@ -1,6 +1,6 @@
 # Projeto de Computação Distribuída: Implementação de Torrent P2P
 
-Este projeto faz parte de um curso de computação distribuída e foca na implementação de um sistema de compartilhamento de arquivos Peer-to-Peer (P2P) utilizando o protocolo BitTorrent. O projeto é dividido em dois componentes principais: um servidor tracker e um cliente peer. Juntos, eles permitem a criação, compartilhamento e download de arquivos de forma distribuída.
+Projeto para a disciplina Computação Distribuída, focando na implementação de um sistema de compartilhamento de arquivos Peer-to-Peer (P2P) utilizando o protocolo BitTorrent. O projeto é dividido em dois componentes principais: um servidor tracker e um cliente peer. Juntos, eles permitem a criação, compartilhamento e download de arquivos de forma distribuída.
 
 ## Estrutura do Projeto
 
