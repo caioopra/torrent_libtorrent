@@ -33,7 +33,7 @@ void Peer::start_cli_loop() {
 
   while (true) {
     std::cout << "\nCommands: seed <file>, download <.torrent>, stop <name>, "
-                 "list, exit\n> ";
+                 "list, stats, exit\n> ";
 
     std::getline(std::cin, cmd);
     std::istringstream iss(cmd);
@@ -51,6 +51,8 @@ void Peer::start_cli_loop() {
       stop_torrent(arg);
     } else if (action == "list") {
       list_active_torrents();
+    } else if (action == "stats") {
+      show_statistics();
     } else if (action == "exit") {
       break;
     } else {

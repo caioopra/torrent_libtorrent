@@ -14,7 +14,6 @@ public:
   void download_torrent(const std::string &torrent_path);
   void stop_torrent(const std::string &name_or_path);
   void list_active_torrents();
-
   void show_statistics();
 
 private:
