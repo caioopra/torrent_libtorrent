@@ -65,58 +65,103 @@ void Peer::start_cli_loop() {
 
 void Peer::seed_file(const std::string &file_path,
                      const std::string &tracker_url) {
+  // Check if the file exists before proceeding.
   if (!std::filesystem::exists(file_path)) {
     std::cerr << "File does not exist: " << file_path << std::endl;
     return;
   }
 
+  // Create a file storage object to represent the file structure.
   file_storage fs;
-  add_files(fs, file_path);
+  add_files(fs, file_path); // Add the file to the file storage.
 
+  // Create a torrent object from the file storage.
   create_torrent t(fs);
-  t.add_tracker(tracker_url);
-  set_piece_hashes(t, std::filesystem::path(file_path).parent_path(), [](int i) {
-    std::cout << "Hashing piece " << i << std::endl;
-  });
 
+  // Add the tracker URL to the torrent. This is where peers will announce
+  // themselves.
+  t.add_tracker(tracker_url);
+
+  // Generate piece hashes for the file. This ensures data integrity during
+  // transfers. The `set_piece_hashes` function calculates the SHA-1 hash for
+  // each piece of the file. These hashes are stored in the torrent metadata and
+  // are used by peers to verify the integrity of the data they download. The
+  // function takes:
+  // - The `create_torrent` object to store the hashes.
+  // - The base path of the file.
+  // - A callback function to log progress for each piece.
+  set_piece_hashes(t, std::filesystem::path(file_path).parent_path(),
+                   [](int i) {
+                     std::cout << "Hashing piece " << i
+                               << std::endl; // Log progress for each piece.
+                   });
+
+  // Define the path where the .torrent file will be saved.
   std::string torrent_path =
       "torrents/" + std::filesystem::path(file_path).filename().string() +
       ".torrent";
+
+  // Write the generated torrent metadata to a .torrent file.
+  // The `bencode` function encodes the torrent metadata into the bencode
+  // format, which is a compact, efficient encoding format used by the
+  // BitTorrent protocol. The metadata includes information such as:
+  // - File structure (name, size, etc.).
+  // - Piece hashes for data integrity.
+  // - Tracker URLs for peer discovery.
   std::ofstream out(torrent_path, std::ios::binary);
   if (!out) {
     std::cerr << "Failed to create torrent file: " << torrent_path << std::endl;
     return;
   }
-  bencode(std::ostream_iterator<char>(out), t.generate());
+  bencode(std::ostream_iterator<char>(out),
+          t.generate()); // Encode the torrent metadata in bencode format.
   out.flush();
 
   std::cout << "Created torrent: " << torrent_path << std::endl;
 
+  // Prepare the torrent for seeding by setting its parameters.
   add_torrent_params atp;
-  atp.ti = std::make_shared<torrent_info>(torrent_path);
-  atp.save_path = std::filesystem::path(file_path).parent_path().string();
+  atp.ti = std::make_shared<torrent_info>(
+      torrent_path); // Load the torrent metadata.
+  atp.save_path = std::filesystem::path(file_path)
+                      .parent_path()
+                      .string(); // Set the save path for the file.
 
+  // Add the torrent to the libtorrent session for seeding.
   torrent_handle h = session_->add_torrent(std::move(atp));
-  std::string name = h.status().name;
-  active_torrents_[name] = h;
+  std::string name = h.status().name; // Get the name of the torrent.
+  active_torrents_[name] =
+      h; // Store the torrent handle in the active torrents map.
 
   std::cout << "Seeding: " << name << std::endl;
 }
 
 void Peer::download_torrent(const std::string &torrent_path) {
+  // Check if the .torrent file exists before proceeding.
   if (!std::filesystem::exists(torrent_path)) {
     std::cerr << "Torrent file does not exist: " << torrent_path << std::endl;
     return;
   }
 
+  // Prepare the parameters for adding the torrent to the session.
   add_torrent_params atp;
+
+  // Load the torrent metadata from the .torrent file.
   atp.ti = std::make_shared<torrent_info>(torrent_path);
+
+  // Set the directory where the downloaded files will be saved.
   atp.save_path = "downloads";
 
+  // Add the torrent to the libtorrent session for downloading.
   torrent_handle h = session_->add_torrent(std::move(atp));
+
+  // Retrieve the name of the torrent from its status.
   std::string name = h.status().name;
+
+  // Store the torrent handle in the active torrents map for tracking.
   active_torrents_[name] = h;
 
+  // Log the start of the download process.
   std::cout << "Downloading: " << name << std::endl;
 }
 
