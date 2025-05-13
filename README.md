@@ -2,6 +2,12 @@
 
 Projeto para a disciplina Computação Distribuída, focando na implementação de um sistema de compartilhamento de arquivos Peer-to-Peer (P2P) utilizando o protocolo BitTorrent. O projeto é dividido em dois componentes principais: um servidor tracker e um cliente peer. Juntos, eles permitem a criação, compartilhamento e download de arquivos de forma distribuída.
 
+Grupo:
+   - Caio Prá Silva
+   - Lucas Costa Valença
+   - Pedro Nack Martins
+   - Rafael Luis Sol Veit Vargas
+
 ## Estrutura do Projeto
 
 - **tracker/**: Contém a implementação do servidor tracker escrito em Rust.
